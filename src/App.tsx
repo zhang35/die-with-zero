@@ -220,8 +220,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-full">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-[1400px] mx-auto">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">Die With Zero</h1>
           <p className="text-base sm:text-lg text-gray-600">Spend Curve Calculator</p>
