@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Line } from 'react-chartjs-2';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LineElement,
@@ -11,8 +11,8 @@ import {
   Legend,
   Filler,
   Plugin,
-} from 'chart.js';
-import { calculateSpendCurve } from '../utils/calculations';
+} from "chart.js";
+import { calculateSpendCurve } from "../utils/calculations";
 
 ChartJS.register(
   LineElement,
@@ -26,7 +26,7 @@ ChartJS.register(
 
 // Custom plugin for vertical line
 const verticalLinePlugin: Plugin = {
-  id: 'verticalLine',
+  id: "verticalLine",
   afterDraw: (chart) => {
     const tooltip = chart.tooltip;
     if (tooltip?.getActiveElements().length) {
@@ -41,12 +41,12 @@ const verticalLinePlugin: Plugin = {
       ctx.moveTo(x, topY);
       ctx.lineTo(x, bottomY);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = '#666';
+      ctx.strokeStyle = "#666";
       ctx.setLineDash([5, 5]);
       ctx.stroke();
       ctx.restore();
     }
-  }
+  },
 };
 
 export default function Calculator() {
@@ -58,19 +58,20 @@ export default function Calculator() {
   const [investmentReturn, setInvestmentReturn] = useState<number>(0.03);
   const [inflation, setInflation] = useState<number>(0.03);
   const [retirementAge, setRetirementAge] = useState<number>(65);
-  const [postRetirementBenefits, setPostRetirementBenefits] = useState<number>(20000);
+  const [postRetirementBenefits, setPostRetirementBenefits] =
+    useState<number>(20000);
   const [annualIncome, setAnnualIncome] = useState<number>(120000);
 
   // Helper function to format currency numbers
   const formatCurrency = (value: number): string => {
-    return value.toLocaleString('en-US', {
-      maximumFractionDigits: 0
+    return value.toLocaleString("en-US", {
+      maximumFractionDigits: 0,
     });
   };
 
   // Helper function to parse currency strings back to numbers
   const parseCurrency = (value: string): number => {
-    return parseFloat(value.replace(/,/g, ''));
+    return parseFloat(value.replace(/,/g, ""));
   };
 
   const dataPoints = calculateSpendCurve(
@@ -95,7 +96,7 @@ export default function Calculator() {
         borderColor: "#6366f1",
         backgroundColor: "rgba(99, 102, 241, 0.2)",
         tension: 0.3,
-        yAxisID: 'y',
+        yAxisID: "y",
       },
       {
         label: "Net Worth",
@@ -103,7 +104,7 @@ export default function Calculator() {
         borderColor: "#10b981",
         backgroundColor: "rgba(16, 185, 129, 0.2)",
         tension: 0.3,
-        yAxisID: 'y1',
+        yAxisID: "y1",
       },
     ],
   };
@@ -112,7 +113,7 @@ export default function Calculator() {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
-      mode: 'index' as const,
+      mode: "index" as const,
       intersect: false,
     },
     plugins: {
@@ -123,68 +124,71 @@ export default function Calculator() {
         mode: "index" as const,
         intersect: false,
         callbacks: {
-          label: function(context: { dataset: { label?: string }, parsed: { y: number | null } }) {
-            let label = context.dataset.label || '';
+          label: function (context: {
+            dataset: { label?: string };
+            parsed: { y: number | null };
+          }) {
+            let label = context.dataset.label || "";
             if (label) {
-              label += ': ';
+              label += ": ";
             }
             if (context.parsed.y !== null) {
-              label += new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
+              label += new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
               }).format(context.parsed.y);
             }
             return label;
-          }
-        }
+          },
+        },
       },
       crosshair: {
         line: {
-          color: '#666',
+          color: "#666",
           width: 1,
-          dashPattern: [5, 5]
+          dashPattern: [5, 5],
         },
         sync: {
-          enabled: true
+          enabled: true,
         },
         zoom: {
-          enabled: false
-        }
-      }
+          enabled: false,
+        },
+      },
     },
     scales: {
       x: {
         title: {
           display: true,
-          text: t('ageLabel'),
+          text: t("ageLabel"),
         },
         grid: {
           drawOnChartArea: true,
-          color: function(context: { tick?: { major?: boolean } }) {
+          color: function (context: { tick?: { major?: boolean } }) {
             if (context.tick && context.tick.major) {
-              return '#666';
+              return "#666";
             }
-            return '#ddd';
-          }
-        }
+            return "#ddd";
+          },
+        },
       },
       y: {
-        type: 'linear' as const,
+        type: "linear" as const,
         display: true,
-        position: 'left' as const,
+        position: "left" as const,
         title: {
           display: true,
-          text: t('annualSpendLabel'),
+          text: t("annualSpendLabel"),
         },
         beginAtZero: true,
       },
       y1: {
-        type: 'linear' as const,
+        type: "linear" as const,
         display: true,
-        position: 'right' as const,
+        position: "right" as const,
         title: {
           display: true,
-          text: t('netWorthLabel'),
+          text: t("netWorthLabel"),
         },
         beginAtZero: true,
         grid: {
@@ -200,29 +204,40 @@ export default function Calculator() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Age-related inputs */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('currentAge')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("currentAge")}
+            </label>
             <input
-              type="text"
-              value={formatCurrency(currentAge)}
+              type="number"
+              value={currentAge}
               onChange={(e) => {
-                const value = parseCurrency(e.target.value);
-                if (!isNaN(value) && value >= 0) {
-                  setCurrentAge(Math.floor(value));
+                const value =
+                  e.target.value === "" ? 0 : Number(e.target.value);
+                if (!isNaN(value) && value >= 0 && value <= 120) {
+                  setCurrentAge(value);
                 }
               }}
               className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               min="0"
+              max="120"
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('retirementAge')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("retirementAge")}
+            </label>
             <input
-              type="text"
-              value={formatCurrency(retirementAge)}
+              type="number"
+              value={retirementAge}
               onChange={(e) => {
-                const value = parseCurrency(e.target.value);
-                if (!isNaN(value) && value >= currentAge && value <= lifeExpectancy) {
-                  setRetirementAge(Math.floor(value));
+                const value =
+                  e.target.value === "" ? 0 : Number(e.target.value);
+                if (
+                  !isNaN(value) &&
+                  value >= currentAge &&
+                  value <= lifeExpectancy
+                ) {
+                  setRetirementAge(value);
                 }
               }}
               className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -231,24 +246,30 @@ export default function Calculator() {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('lifeExpectancy')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("lifeExpectancy")}
+            </label>
             <input
-              type="text"
-              value={formatCurrency(lifeExpectancy)}
+              type="number"
+              value={lifeExpectancy}
               onChange={(e) => {
-                const value = parseCurrency(e.target.value);
-                if (!isNaN(value) && value >= currentAge) {
-                  setLifeExpectancy(Math.floor(value));
+                const value =
+                  e.target.value === "" ? 0 : Number(e.target.value);
+                if (!isNaN(value) && value >= currentAge && value <= 120) {
+                  setLifeExpectancy(value);
                 }
               }}
               className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               min={currentAge}
+              max={120}
             />
           </div>
 
           {/* Financial inputs */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('annualIncome')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("annualIncome")}
+            </label>
             <input
               type="text"
               value={formatCurrency(annualIncome)}
@@ -263,7 +284,9 @@ export default function Calculator() {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('annualSpend')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("annualSpend")}
+            </label>
             <input
               type="text"
               value={formatCurrency(annualSpend)}
@@ -278,7 +301,9 @@ export default function Calculator() {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('netWorth')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("netWorth")}
+            </label>
             <input
               type="text"
               value={formatCurrency(netWorth)}
@@ -295,7 +320,9 @@ export default function Calculator() {
 
           {/* Investment-related inputs */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('investmentReturn')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("investmentReturn")}
+            </label>
             <input
               type="number"
               value={Number((investmentReturn * 100).toFixed(2))}
@@ -313,7 +340,9 @@ export default function Calculator() {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('inflation')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("inflation")}
+            </label>
             <input
               type="number"
               value={Number((inflation * 100).toFixed(2))}
@@ -333,7 +362,9 @@ export default function Calculator() {
 
           {/* Retirement-related inputs */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{t('postRetirementBenefits')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("postRetirementBenefits")}
+            </label>
             <input
               type="text"
               value={formatCurrency(postRetirementBenefits)}
@@ -352,8 +383,8 @@ export default function Calculator() {
 
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
         <div className="h-[400px] sm:h-[500px] md:h-[600px] w-full">
-          <Line 
-            data={chartData} 
+          <Line
+            data={chartData}
             options={{
               ...options,
               responsive: true,
@@ -361,9 +392,9 @@ export default function Calculator() {
               layout: {
                 padding: {
                   left: 0,
-                  right: 0
-                }
-              }
+                  right: 0,
+                },
+              },
             }}
             plugins={[verticalLinePlugin]}
           />
@@ -371,4 +402,4 @@ export default function Calculator() {
       </div>
     </>
   );
-} 
+}
