@@ -36,7 +36,10 @@ function calculateSpendCurve(
   annualSpend: number,
   netWorth: number,
   investmentReturn: number,
-  inflation: number
+  inflation: number,
+  retirementAge: number,
+  postRetirementBenefits: number,
+  annualIncome: number
 ): SpendCurvePoint[] {
   const curve: SpendCurvePoint[] = [];
   const remainingYears = lifeExpectancy - currentAge;
@@ -54,10 +57,21 @@ function calculateSpendCurve(
   
   for (let age = currentAge; age <= lifeExpectancy; age++) {
     // Calculate spend for this year with inflation
-    const spend = adjustedAnnualSpend * Math.pow(1 + inflation, age - currentAge);
+    let spend = adjustedAnnualSpend * Math.pow(1 + inflation, age - currentAge);
+    
+    // Add post-retirement benefits if retired
+    if (age >= retirementAge) {
+      spend -= postRetirementBenefits * Math.pow(1 + inflation, age - retirementAge);
+    }
     
     // Update net worth
-    currentNetWorth = (currentNetWorth - spend) * (1 + realReturn);
+    let incomeContribution = 0;
+    if (age < retirementAge) {
+      // Add income contribution before retirement
+      incomeContribution = annualIncome * Math.pow(1 + inflation, age - currentAge);
+    }
+    
+    currentNetWorth = (currentNetWorth - spend + incomeContribution) * (1 + realReturn);
     
     curve.push({
       age,
@@ -96,12 +110,27 @@ const verticalLinePlugin: Plugin = {
 
 export default function App() {
   const { t, i18n } = useTranslation();
-  const [currentAge, setCurrentAge] = useState<number>(40);
+  const [currentAge, setCurrentAge] = useState<number>(30);
   const [lifeExpectancy, setLifeExpectancy] = useState<number>(90);
-  const [annualSpend, setAnnualSpend] = useState<number>(100000);
-  const [netWorth, setNetWorth] = useState<number>(2000000);
-  const [investmentReturn, setInvestmentReturn] = useState<number>(0.07);
+  const [annualSpend, setAnnualSpend] = useState<number>(60000);
+  const [netWorth, setNetWorth] = useState<number>(100000);
+  const [investmentReturn, setInvestmentReturn] = useState<number>(0.03);
   const [inflation, setInflation] = useState<number>(0.03);
+  const [retirementAge, setRetirementAge] = useState<number>(65);
+  const [postRetirementBenefits, setPostRetirementBenefits] = useState<number>(20000);
+  const [annualIncome, setAnnualIncome] = useState<number>(120000);
+
+  // Helper function to format currency numbers
+  const formatCurrency = (value: number): string => {
+    return value.toLocaleString('en-US', {
+      maximumFractionDigits: 0
+    });
+  };
+
+  // Helper function to parse currency strings back to numbers
+  const parseCurrency = (value: string): number => {
+    return parseFloat(value.replace(/,/g, ''));
+  };
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -113,7 +142,10 @@ export default function App() {
     annualSpend,
     netWorth,
     investmentReturn,
-    inflation
+    inflation,
+    retirementAge,
+    postRetirementBenefits,
+    annualIncome
   );
 
   const chartData = {
@@ -259,32 +291,81 @@ export default function App() {
 
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Age-related inputs */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">{t('currentAge')}</label>
               <input
-                type="number"
-                value={currentAge}
-                onChange={(e) => setCurrentAge(+e.target.value)}
+                type="text"
+                value={formatCurrency(currentAge)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    setCurrentAge(Math.floor(value));
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">{t('lifeExpectancy')}</label>
+              <label className="block text-sm font-medium text-gray-700">{t('retirementAge')}</label>
               <input
-                type="number"
-                value={lifeExpectancy}
-                onChange={(e) => setLifeExpectancy(+e.target.value)}
+                type="text"
+                value={formatCurrency(retirementAge)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= currentAge && value <= lifeExpectancy) {
+                    setRetirementAge(Math.floor(value));
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 min={currentAge}
+                max={lifeExpectancy}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">{t('lifeExpectancy')}</label>
+              <input
+                type="text"
+                value={formatCurrency(lifeExpectancy)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= currentAge) {
+                    setLifeExpectancy(Math.floor(value));
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min={currentAge}
+              />
+            </div>
+
+            {/* Financial inputs */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">{t('annualIncome')}</label>
+              <input
+                type="text"
+                value={formatCurrency(annualIncome)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    setAnnualIncome(Math.floor(value));
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
               />
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">{t('annualSpend')}</label>
               <input
-                type="number"
-                value={annualSpend}
-                onChange={(e) => setAnnualSpend(+e.target.value)}
+                type="text"
+                value={formatCurrency(annualSpend)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    setAnnualSpend(Math.floor(value));
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
               />
@@ -292,19 +373,31 @@ export default function App() {
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">{t('netWorth')}</label>
               <input
-                type="number"
-                value={netWorth}
-                onChange={(e) => setNetWorth(+e.target.value)}
+                type="text"
+                value={formatCurrency(netWorth)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    setNetWorth(Math.floor(value));
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
               />
             </div>
+
+            {/* Investment-related inputs */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">{t('investmentReturn')}</label>
               <input
                 type="number"
                 value={Number((investmentReturn * 100).toFixed(2))}
-                onChange={(e) => setInvestmentReturn(+e.target.value / 100)}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0 && value <= 100) {
+                    setInvestmentReturn(value / 100);
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
                 max="100"
@@ -317,12 +410,34 @@ export default function App() {
               <input
                 type="number"
                 value={Number((inflation * 100).toFixed(2))}
-                onChange={(e) => setInflation(+e.target.value / 100)}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0 && value <= 100) {
+                    setInflation(value / 100);
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
                 max="100"
                 step="0.01"
                 pattern="^\d+(\.\d{1,2})?$"
+              />
+            </div>
+
+            {/* Retirement-related inputs */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">{t('postRetirementBenefits')}</label>
+              <input
+                type="text"
+                value={formatCurrency(postRetirementBenefits)}
+                onChange={(e) => {
+                  const value = parseCurrency(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    setPostRetirementBenefits(Math.floor(value));
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
               />
             </div>
           </div>
