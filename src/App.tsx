@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  Plugin,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
@@ -22,37 +23,112 @@ ChartJS.register(
   Filler
 );
 
+interface SpendCurvePoint {
+  age: number;
+  spend: number;
+  netWorth: number;
+}
+
 function calculateSpendCurve(
-  age: number,
-  retirementAge: number,
-  savings: number
-): { age: number; spend: number }[] {
-  const years = retirementAge - age;
-  const curve = [];
-  for (let i = 0; i <= years; i++) {
-    const spend = savings * Math.exp(-i / years);
-    curve.push({ age: age + i, spend: Math.round(spend) });
+  currentAge: number,
+  lifeExpectancy: number,
+  annualSpend: number,
+  netWorth: number,
+  investmentReturn: number,
+  inflation: number
+): SpendCurvePoint[] {
+  const curve: SpendCurvePoint[] = [];
+  const remainingYears = lifeExpectancy - currentAge;
+  const realReturn = (1 + investmentReturn) / (1 + inflation) - 1;
+  
+  // Calculate the optimal annual spend that will deplete the net worth at life expectancy
+  const numerator = netWorth * (1 + realReturn);
+  const denominator = (1 - Math.pow((1 + inflation) / (1 + realReturn), remainingYears)) / (1 - (1 + inflation) / (1 + realReturn));
+  const optimalAnnualSpend = numerator / denominator;
+  
+  // Use the minimum of the user's desired annual spend and the optimal spend
+  const adjustedAnnualSpend = Math.min(annualSpend, optimalAnnualSpend);
+  
+  let currentNetWorth = netWorth;
+  
+  for (let age = currentAge; age <= lifeExpectancy; age++) {
+    // Calculate spend for this year with inflation
+    const spend = adjustedAnnualSpend * Math.pow(1 + inflation, age - currentAge);
+    
+    // Update net worth
+    currentNetWorth = (currentNetWorth - spend) * (1 + realReturn);
+    
+    curve.push({
+      age,
+      spend: Math.round(spend),
+      netWorth: Math.max(0, Math.round(currentNetWorth)) // Ensure net worth never goes negative
+    });
   }
+  
   return curve;
 }
 
-export default function App() {
-  const [age, setAge] = useState<number>(30);
-  const [retirementAge, setRetirementAge] = useState<number>(65);
-  const [savings, setSavings] = useState<number>(1000000);
+// Custom plugin for vertical line
+const verticalLinePlugin: Plugin = {
+  id: 'verticalLine',
+  afterDraw: (chart) => {
+    const tooltip = chart.tooltip;
+    if (tooltip?.getActiveElements().length) {
+      const ctx = chart.ctx;
+      const activeElement = tooltip.getActiveElements()[0];
+      const x = activeElement.element.x;
+      const topY = chart.scales.y.top;
+      const bottomY = chart.scales.y.bottom;
 
-  const dataPoints = calculateSpendCurve(age, retirementAge, savings);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x, bottomY);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#666';
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+};
+
+export default function App() {
+  const [currentAge, setCurrentAge] = useState<number>(40);
+  const [lifeExpectancy, setLifeExpectancy] = useState<number>(90);
+  const [annualSpend, setAnnualSpend] = useState<number>(100000);
+  const [netWorth, setNetWorth] = useState<number>(2000000);
+  const [investmentReturn, setInvestmentReturn] = useState<number>(0.07);
+  const [inflation, setInflation] = useState<number>(0.03);
+
+  const dataPoints = calculateSpendCurve(
+    currentAge,
+    lifeExpectancy,
+    annualSpend,
+    netWorth,
+    investmentReturn,
+    inflation
+  );
 
   const chartData = {
     labels: dataPoints.map((d) => d.age),
     datasets: [
       {
-        label: "Estimated Spend",
+        label: "Annual Spend",
         data: dataPoints.map((d) => d.spend),
         fill: true,
         borderColor: "#6366f1",
         backgroundColor: "rgba(99, 102, 241, 0.2)",
         tension: 0.3,
+        yAxisID: 'y',
+      },
+      {
+        label: "Net Worth",
+        data: dataPoints.map((d) => d.netWorth),
+        borderColor: "#10b981",
+        backgroundColor: "rgba(16, 185, 129, 0.2)",
+        tension: 0.3,
+        yAxisID: 'y1',
       },
     ],
   };
@@ -60,6 +136,10 @@ export default function App() {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
     plugins: {
       legend: {
         position: "top" as const,
@@ -67,7 +147,35 @@ export default function App() {
       tooltip: {
         mode: "index" as const,
         intersect: false,
+        callbacks: {
+          label: function(context: { dataset: { label?: string }, parsed: { y: number | null } }) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+              }).format(context.parsed.y);
+            }
+            return label;
+          }
+        }
       },
+      crosshair: {
+        line: {
+          color: '#666',
+          width: 1,
+          dashPattern: [5, 5]
+        },
+        sync: {
+          enabled: true
+        },
+        zoom: {
+          enabled: false
+        }
+      }
     },
     scales: {
       x: {
@@ -75,53 +183,144 @@ export default function App() {
           display: true,
           text: "Age",
         },
+        grid: {
+          drawOnChartArea: true,
+          color: function(context: { tick?: { major?: boolean } }) {
+            if (context.tick && context.tick.major) {
+              return '#666';
+            }
+            return '#ddd';
+          }
+        }
       },
       y: {
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
         title: {
           display: true,
-          text: "Spend ($)",
+          text: "Annual Spend",
         },
         beginAtZero: true,
+      },
+      y1: {
+        type: 'linear' as const,
+        display: true,
+        position: 'right' as const,
+        title: {
+          display: true,
+          text: "Net Worth",
+        },
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+        },
       },
     },
   };
 
   return (
-    <div className="p-6 font-sans max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Spend Curve Visualizer</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-full">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">Die With Zero</h1>
+          <p className="text-base sm:text-lg text-gray-600">Spend Curve Calculator</p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium mb-1">Current Age:</label>
-          <input
-            type="number"
-            value={age}
-            onChange={(e) => setAge(+e.target.value)}
-            className="w-full border rounded px-2 py-1"
-          />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Current Age</label>
+              <input
+                type="number"
+                value={currentAge}
+                onChange={(e) => setCurrentAge(+e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Life Expectancy</label>
+              <input
+                type="number"
+                value={lifeExpectancy}
+                onChange={(e) => setLifeExpectancy(+e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min={currentAge}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Annual Spend ($)</label>
+              <input
+                type="number"
+                value={annualSpend}
+                onChange={(e) => setAnnualSpend(+e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Current Net Worth ($)</label>
+              <input
+                type="number"
+                value={netWorth}
+                onChange={(e) => setNetWorth(+e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Investment Return (%)</label>
+              <input
+                type="number"
+                value={Number((investmentReturn * 100).toFixed(2))}
+                onChange={(e) => setInvestmentReturn(+e.target.value / 100)}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
+                max="100"
+                step="0.01"
+                pattern="^\d+(\.\d{1,2})?$"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Inflation (%)</label>
+              <input
+                type="number"
+                value={Number((inflation * 100).toFixed(2))}
+                onChange={(e) => setInflation(+e.target.value / 100)}
+                className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                min="0"
+                max="100"
+                step="0.01"
+                pattern="^\d+(\.\d{1,2})?$"
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Retirement Age:</label>
-          <input
-            type="number"
-            value={retirementAge}
-            onChange={(e) => setRetirementAge(+e.target.value)}
-            className="w-full border rounded px-2 py-1"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Savings:</label>
-          <input
-            type="number"
-            value={savings}
-            onChange={(e) => setSavings(+e.target.value)}
-            className="w-full border rounded px-2 py-1"
-          />
-        </div>
-      </div>
 
-      <div className="h-64 md:h-96">
-        <Line data={chartData} options={options} />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+          <div className="h-[400px] sm:h-[500px] md:h-[600px] w-full">
+            <Line 
+              data={chartData} 
+              options={{
+                ...options,
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                  padding: {
+                    left: 0,
+                    right: 0
+                  }
+                }
+              }}
+              plugins={[verticalLinePlugin]}
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500">
+          <p>Die With Zero - Optimize your life experiences by spending your money when it matters most</p>
+        </div>
       </div>
     </div>
   );
