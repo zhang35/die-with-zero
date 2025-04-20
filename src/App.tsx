@@ -1,5 +1,6 @@
 // App.tsx
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   LineElement,
@@ -94,12 +95,17 @@ const verticalLinePlugin: Plugin = {
 };
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   const [currentAge, setCurrentAge] = useState<number>(40);
   const [lifeExpectancy, setLifeExpectancy] = useState<number>(90);
   const [annualSpend, setAnnualSpend] = useState<number>(100000);
   const [netWorth, setNetWorth] = useState<number>(2000000);
   const [investmentReturn, setInvestmentReturn] = useState<number>(0.07);
   const [inflation, setInflation] = useState<number>(0.03);
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
 
   const dataPoints = calculateSpendCurve(
     currentAge,
@@ -181,7 +187,7 @@ export default function App() {
       x: {
         title: {
           display: true,
-          text: "Age",
+          text: t('ageLabel'),
         },
         grid: {
           drawOnChartArea: true,
@@ -199,7 +205,7 @@ export default function App() {
         position: 'left' as const,
         title: {
           display: true,
-          text: "Annual Spend",
+          text: t('annualSpendLabel'),
         },
         beginAtZero: true,
       },
@@ -209,7 +215,7 @@ export default function App() {
         position: 'right' as const,
         title: {
           display: true,
-          text: "Net Worth",
+          text: t('netWorthLabel'),
         },
         beginAtZero: true,
         grid: {
@@ -222,15 +228,39 @@ export default function App() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 font-sans">
       <div className="w-full max-w-[1400px] mx-auto">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">Die With Zero</h1>
-          <p className="text-base sm:text-lg text-gray-600">Spend Curve Calculator</p>
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">{t('title')}</h1>
+            <p className="text-base sm:text-lg text-gray-600">{t('subtitle')}</p>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => changeLanguage('en')}
+              className={`px-4 py-2 rounded-lg border ${
+                i18n.language === 'en' 
+                  ? 'text-indigo-600 border-indigo-600' 
+                  : 'text-gray-800 border-gray-800'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => changeLanguage('zh')}
+              className={`px-4 py-2 rounded-lg border ${
+                i18n.language === 'zh' 
+                  ? 'text-indigo-600 border-indigo-600' 
+                  : 'text-gray-800 border-gray-800'
+              }`}
+            >
+              中文
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Current Age</label>
+              <label className="block text-sm font-medium text-gray-700">{t('currentAge')}</label>
               <input
                 type="number"
                 value={currentAge}
@@ -240,7 +270,7 @@ export default function App() {
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Life Expectancy</label>
+              <label className="block text-sm font-medium text-gray-700">{t('lifeExpectancy')}</label>
               <input
                 type="number"
                 value={lifeExpectancy}
@@ -250,7 +280,7 @@ export default function App() {
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Annual Spend ($)</label>
+              <label className="block text-sm font-medium text-gray-700">{t('annualSpend')}</label>
               <input
                 type="number"
                 value={annualSpend}
@@ -260,7 +290,7 @@ export default function App() {
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Current Net Worth ($)</label>
+              <label className="block text-sm font-medium text-gray-700">{t('netWorth')}</label>
               <input
                 type="number"
                 value={netWorth}
@@ -270,7 +300,7 @@ export default function App() {
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Investment Return (%)</label>
+              <label className="block text-sm font-medium text-gray-700">{t('investmentReturn')}</label>
               <input
                 type="number"
                 value={Number((investmentReturn * 100).toFixed(2))}
@@ -283,7 +313,7 @@ export default function App() {
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Inflation (%)</label>
+              <label className="block text-sm font-medium text-gray-700">{t('inflation')}</label>
               <input
                 type="number"
                 value={Number((inflation * 100).toFixed(2))}
@@ -319,7 +349,7 @@ export default function App() {
         </div>
 
         <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500">
-          <p>Die With Zero - Optimize your life experiences by spending your money when it matters most</p>
+          <p>{t('footer')}</p>
         </div>
       </div>
     </div>

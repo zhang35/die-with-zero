@@ -1,0 +1,14 @@
+{
+  "title": "Die With Zero",
+  "subtitle": "Spend Curve Calculator",
+  "currentAge": "Current Age",
+  "lifeExpectancy": "Life Expectancy",
+  "annualSpend": "Annual Spend ($)",
+  "netWorth": "Current Net Worth ($)",
+  "investmentReturn": "Investment Return (%)",
+  "inflation": "Inflation (%)",
+  "annualSpendLabel": "Annual Spend",
+  "netWorthLabel": "Net Worth",
+  "ageLabel": "Age",
+  "footer": "Die With Zero - Optimize your life experiences by spending your money when it matters most"
+}
