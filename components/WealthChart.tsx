@@ -316,8 +316,8 @@ export default function WealthChart({ data, currency, inputs, results, language 
         {/* Hover effects */}
         {hoverData && (() => {
           const yearDetails = getYearlyDetails(hoverData.point.age, hoverData.point.wealth);
-          const tooltipWidth = 180;
-          const tooltipHeight = 135;
+          const tooltipWidth = 220;
+          const tooltipHeight = 160;
           const tooltipX = hoverData.x > chartWidth / 2
             ? hoverData.x - tooltipWidth - 15
             : hoverData.x + 15;
@@ -365,10 +365,10 @@ export default function WealthChart({ data, currency, inputs, results, language 
                 {/* Age header */}
                 <text
                   x={tooltipX + tooltipWidth / 2}
-                  y={tooltipY + 18}
+                  y={tooltipY + 22}
                   textAnchor="middle"
                   fill="#3b82f6"
-                  fontSize="13"
+                  fontSize="15"
                   fontFamily="system-ui"
                   fontWeight="700"
                 >
@@ -377,21 +377,21 @@ export default function WealthChart({ data, currency, inputs, results, language 
 
                 {/* Wealth */}
                 <text
-                  x={tooltipX + 10}
-                  y={tooltipY + 38}
+                  x={tooltipX + 12}
+                  y={tooltipY + 45}
                   fill="#94a3b8"
-                  fontSize="10"
+                  fontSize="12"
                   fontFamily="system-ui"
                   fontWeight="600"
                 >
                   {ct.wealth}:
                 </text>
                 <text
-                  x={tooltipX + tooltipWidth - 10}
-                  y={tooltipY + 38}
+                  x={tooltipX + tooltipWidth - 12}
+                  y={tooltipY + 45}
                   textAnchor="end"
                   fill="#fff"
-                  fontSize="11"
+                  fontSize="13"
                   fontFamily="system-ui"
                   fontWeight="700"
                 >
@@ -400,31 +400,31 @@ export default function WealthChart({ data, currency, inputs, results, language 
 
                 {/* Divider */}
                 <line
-                  x1={tooltipX + 10}
-                  y1={tooltipY + 45}
-                  x2={tooltipX + tooltipWidth - 10}
-                  y2={tooltipY + 45}
+                  x1={tooltipX + 12}
+                  y1={tooltipY + 53}
+                  x2={tooltipX + tooltipWidth - 12}
+                  y2={tooltipY + 53}
                   stroke="rgba(148, 163, 184, 0.3)"
                   strokeWidth="1"
                 />
 
                 {/* Income */}
                 <text
-                  x={tooltipX + 10}
-                  y={tooltipY + 62}
+                  x={tooltipX + 12}
+                  y={tooltipY + 72}
                   fill="#94a3b8"
-                  fontSize="10"
+                  fontSize="12"
                   fontFamily="system-ui"
                   fontWeight="600"
                 >
                   {ct.yearlyIncome}:
                 </text>
                 <text
-                  x={tooltipX + tooltipWidth - 10}
-                  y={tooltipY + 62}
+                  x={tooltipX + tooltipWidth - 12}
+                  y={tooltipY + 72}
                   textAnchor="end"
                   fill="#10b981"
-                  fontSize="11"
+                  fontSize="13"
                   fontFamily="system-ui"
                   fontWeight="700"
                 >
@@ -433,21 +433,21 @@ export default function WealthChart({ data, currency, inputs, results, language 
 
                 {/* ROI Income */}
                 <text
-                  x={tooltipX + 10}
-                  y={tooltipY + 77}
+                  x={tooltipX + 12}
+                  y={tooltipY + 91}
                   fill="#94a3b8"
-                  fontSize="10"
+                  fontSize="12"
                   fontFamily="system-ui"
                   fontWeight="600"
                 >
                   {ct.roiIncome}:
                 </text>
                 <text
-                  x={tooltipX + tooltipWidth - 10}
-                  y={tooltipY + 77}
+                  x={tooltipX + tooltipWidth - 12}
+                  y={tooltipY + 91}
                   textAnchor="end"
                   fill="#10b981"
-                  fontSize="11"
+                  fontSize="13"
                   fontFamily="system-ui"
                   fontWeight="700"
                 >
@@ -456,21 +456,21 @@ export default function WealthChart({ data, currency, inputs, results, language 
 
                 {/* Expense */}
                 <text
-                  x={tooltipX + 10}
-                  y={tooltipY + 92}
+                  x={tooltipX + 12}
+                  y={tooltipY + 110}
                   fill="#94a3b8"
-                  fontSize="10"
+                  fontSize="12"
                   fontFamily="system-ui"
                   fontWeight="600"
                 >
                   {ct.yearlyExpense}:
                 </text>
                 <text
-                  x={tooltipX + tooltipWidth - 10}
-                  y={tooltipY + 92}
+                  x={tooltipX + tooltipWidth - 12}
+                  y={tooltipY + 110}
                   textAnchor="end"
                   fill="#ef4444"
-                  fontSize="11"
+                  fontSize="13"
                   fontFamily="system-ui"
                   fontWeight="700"
                 >
@@ -479,21 +479,21 @@ export default function WealthChart({ data, currency, inputs, results, language 
 
                 {/* Net */}
                 <text
-                  x={tooltipX + 10}
-                  y={tooltipY + 109}
+                  x={tooltipX + 12}
+                  y={tooltipY + 131}
                   fill="#94a3b8"
-                  fontSize="10"
+                  fontSize="12"
                   fontFamily="system-ui"
                   fontWeight="600"
                 >
                   {ct.net}:
                 </text>
                 <text
-                  x={tooltipX + tooltipWidth - 10}
-                  y={tooltipY + 109}
+                  x={tooltipX + tooltipWidth - 12}
+                  y={tooltipY + 131}
                   textAnchor="end"
                   fill={yearDetails.income + yearDetails.roiIncome - yearDetails.expense >= 0 ? "#10b981" : "#ef4444"}
-                  fontSize="11"
+                  fontSize="13"
                   fontFamily="system-ui"
                   fontWeight="700"
                 >

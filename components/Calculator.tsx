@@ -249,11 +249,17 @@ export default function Calculator() {
   const handleInputChange = (field: keyof CalculatorInputs, value: string) => {
     // Remove commas before parsing
     const cleanValue = value.replace(/,/g, "");
-    const numValue = parseFloat(cleanValue) || 0;
+    // Allow empty string, otherwise parse to number
+    const numValue = cleanValue === "" ? 0 : parseFloat(cleanValue) || 0;
     setInputs((prev) => ({
       ...prev,
       [field]: numValue,
     }));
+  };
+
+  const handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    // Select all text when focusing, especially useful when value is 0
+    event.target.select();
   };
 
   const formatNumber = (num: number) => {
@@ -278,9 +284,9 @@ export default function Calculator() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-2 sm:py-4 px-3 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-3 sm:mb-4 relative">
+        <div className="text-center mb-3 sm:mb-4">
           {/* Language Switch */}
-          <div className="absolute right-0 top-0">
+          <div className="flex justify-center sm:justify-end mb-2 sm:mb-0 sm:absolute sm:right-0 sm:top-0">
             <div className="relative inline-flex items-center bg-white/10 rounded-full p-1 border border-white/20">
               {/* Sliding background */}
               <div
@@ -363,10 +369,11 @@ export default function Calculator() {
                   </label>
                   <input
                     type="number"
-                    value={inputs.currentAge}
+                    value={inputs.currentAge || ""}
                     onChange={(e) =>
                       handleInputChange("currentAge", e.target.value)
                     }
+                    onFocus={handleInputFocus}
                     className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -378,10 +385,11 @@ export default function Calculator() {
                     type="number"
                     min="0"
                     max="11"
-                    value={inputs.currentAgeMonths}
+                    value={inputs.currentAgeMonths || ""}
                     onChange={(e) =>
                       handleInputChange("currentAgeMonths", e.target.value)
                     }
+                    onFocus={handleInputFocus}
                     className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -397,10 +405,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={formatNumber(inputs.currentSavings)}
+                  value={inputs.currentSavings ? formatNumber(inputs.currentSavings) : ""}
                   onChange={(e) =>
                     handleInputChange("currentSavings", e.target.value)
                   }
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -415,10 +424,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="number"
-                  value={inputs.retirementAge}
+                  value={inputs.retirementAge || ""}
                   onChange={(e) =>
                     handleInputChange("retirementAge", e.target.value)
                   }
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -433,10 +443,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="number"
-                  value={inputs.lifeExpectancy}
+                  value={inputs.lifeExpectancy || ""}
                   onChange={(e) =>
                     handleInputChange("lifeExpectancy", e.target.value)
                   }
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -448,10 +459,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={formatNumber(inputs.livingExpensePerMonth)}
+                  value={inputs.livingExpensePerMonth ? formatNumber(inputs.livingExpensePerMonth) : ""}
                   onChange={(e) =>
                     handleInputChange("livingExpensePerMonth", e.target.value)
                   }
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -467,8 +479,9 @@ export default function Calculator() {
                 <input
                   type="number"
                   step="0.1"
-                  value={inputs.roiRate}
+                  value={inputs.roiRate || ""}
                   onChange={(e) => handleInputChange("roiRate", e.target.value)}
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -483,13 +496,14 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={formatNumber(inputs.incomePerMonthAfterRetirement)}
+                  value={inputs.incomePerMonthAfterRetirement ? formatNumber(inputs.incomePerMonthAfterRetirement) : ""}
                   onChange={(e) =>
                     handleInputChange(
                       "incomePerMonthAfterRetirement",
                       e.target.value
                     )
                   }
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -501,15 +515,16 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={formatNumber(
+                  value={inputs.livingExpensePerMonthAfterRetirement ? formatNumber(
                     inputs.livingExpensePerMonthAfterRetirement
-                  )}
+                  ) : ""}
                   onChange={(e) =>
                     handleInputChange(
                       "livingExpensePerMonthAfterRetirement",
                       e.target.value
                     )
                   }
+                  onFocus={handleInputFocus}
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
