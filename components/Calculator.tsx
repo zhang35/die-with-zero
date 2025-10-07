@@ -48,7 +48,8 @@ const translations: Record<Language, Translations> = {
   zh: {
     title: "生前花光计算器",
     subtitle: "合理规划财富，避免过度积累，计算你真正需要赚多少钱",
-    titleTooltip: "基于「Die With Zero」理念，计算到预期寿命时刚好花完所有钱所需的收入。最大化人生体验，而非死后遗产。",
+    titleTooltip:
+      "基于「Die With Zero」理念，计算到预期寿命时刚好花完所有钱所需的收入。最大化人生体验，而非死后遗产。",
     learnMore: "了解更多关于 Die With Zero",
     yourInfo: "个人信息",
     currency: "货币",
@@ -59,7 +60,8 @@ const translations: Record<Language, Translations> = {
     retirementAge: "退休年龄",
     retirementAgeTooltip: "计划停止工作并开始使用储蓄的年龄",
     lifeExpectancy: "预期寿命",
-    lifeExpectancyTooltip: "预计能活到的年龄。计算器将确保在此年龄前刚好花完所有钱。",
+    lifeExpectancyTooltip:
+      "预计能活到的年龄。计算器将确保在此年龄前刚好花完所有钱。",
     livingExpensePerMonth: "每月生活费",
     annualROI: "年化收益率（%）",
     annualROITooltip: "储蓄的预期年化投资回报率（考虑复利效应）",
@@ -79,27 +81,35 @@ const translations: Record<Language, Translations> = {
   },
   en: {
     title: "Die With Zero Calculator",
-    subtitle: "Don't waste your life overearning money you don't actually need.",
-    titleTooltip: "Calculate the exact amount you need to earn to spend all your money by your life expectancy. Based on the philosophy that the goal is to maximize life experiences, not die with the most money.",
+    subtitle:
+      "Don't waste your life overearning money you don't actually need.",
+    titleTooltip:
+      "Calculate the exact amount you need to earn to spend all your money by your life expectancy. Based on the philosophy that the goal is to maximize life experiences, not die with the most money.",
     learnMore: "Learn more about Die With Zero",
     yourInfo: "Your Information",
     currency: "Currency",
     currentAgeYears: "Current Age (Years)",
     currentAgeMonths: "Months (0-11)",
     currentSavings: "Current Savings",
-    currentSavingsTooltip: "Total amount of money you currently have saved for retirement.",
+    currentSavingsTooltip:
+      "Total amount of money you currently have saved for retirement.",
     retirementAge: "Retirement Age",
-    retirementAgeTooltip: "Age at which you plan to stop working and start living off your savings.",
+    retirementAgeTooltip:
+      "Age at which you plan to stop working and start living off your savings.",
     lifeExpectancy: "Life Expectancy",
-    lifeExpectancyTooltip: "The age you expect to live until. The calculator ensures you spend all your money by this age.",
+    lifeExpectancyTooltip:
+      "The age you expect to live until. The calculator ensures you spend all your money by this age.",
     livingExpensePerMonth: "Living Expense Per Month",
     annualROI: "Annual ROI Rate (%)",
-    annualROITooltip: "Expected annual return on investment for your savings. This accounts for compound interest over time.",
+    annualROITooltip:
+      "Expected annual return on investment for your savings. This accounts for compound interest over time.",
     incomeAfterRetirement: "Income Per Month After Retirement",
-    incomeAfterRetirementTooltip: "Passive income you'll receive during retirement (e.g., pension, social security, rental income).",
+    incomeAfterRetirementTooltip:
+      "Passive income you'll receive during retirement (e.g., pension, social security, rental income).",
     livingExpenseAfterRetirement: "Living Expense Per Month After Retirement",
     totalEarningsNeeded: "Total Earnings Needed",
-    totalEarningsNeededTooltip: "Total amount you need to earn from now until retirement to achieve your Die With Zero goal.",
+    totalEarningsNeededTooltip:
+      "Total amount you need to earn from now until retirement to achieve your Die With Zero goal.",
     yearlyEarningsNeeded: "Yearly Earnings Needed",
     monthlyEarningsNeeded: "Monthly Earnings Needed",
     includesLivingExpenses: "Includes living expenses +",
@@ -122,26 +132,61 @@ function Tooltip({
   position?: "top" | "bottom";
 }) {
   const [show, setShow] = useState(false);
+  const [isPersistent, setIsPersistent] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Toggle persistent mode on click
+    if (isPersistent) {
+      setIsPersistent(false);
+      setShow(false);
+    } else {
+      setIsPersistent(true);
+      setShow(true);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    // Only show on hover if not in persistent mode
+    if (!isPersistent) {
+      setShow(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    // Only hide on mouse leave if not in persistent mode
+    if (!isPersistent) {
+      setShow(false);
+    }
+  };
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPersistent(false);
+    setShow(false);
+  };
 
   return (
     <div className="relative inline-block">
       <span
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)}
-        onClick={() => setShow(!show)}
-        className="cursor-help text-slate-400 hover:text-slate-200 ml-1 touch-manipulation"
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="cursor-help text-slate-400 hover:text-slate-200 ml-1 touch-manipulation select-none"
       >
         {children}
       </span>
       {show && (
         <>
+          {/* Backdrop only shows in persistent mode (after click/touch) */}
+          {isPersistent && (
+            <div className="fixed inset-0 z-10" onClick={handleClose} />
+          )}
           <div
-            className="fixed inset-0 z-10 md:hidden"
-            onClick={() => setShow(false)}
-          />
-          <div className={`absolute z-20 left-1/2 transform -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] px-3 py-2 text-sm text-white bg-slate-900 rounded-lg shadow-lg border border-slate-700 ${
-            position === "top" ? "bottom-full mb-2" : "top-full mt-2"
-          }`}>
+            className={`absolute z-20 left-1/2 transform -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] px-3 py-2 text-sm text-white bg-slate-900 rounded-lg shadow-lg border border-slate-700 ${
+              position === "top" ? "bottom-full mb-2" : "top-full mt-2"
+            }`}
+          >
             {text}
             {position === "top" ? (
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></div>
@@ -165,17 +210,19 @@ export default function Calculator() {
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          return data.inputs || {
-            currentAge: 30,
-            currentAgeMonths: 0,
-            currentSavings: 200000,
-            retirementAge: 50,
-            lifeExpectancy: 80,
-            livingExpensePerMonth: 10000,
-            roiRate: 4,
-            incomePerMonthAfterRetirement: 2000,
-            livingExpensePerMonthAfterRetirement: 10000,
-          };
+          return (
+            data.inputs || {
+              currentAge: 30,
+              currentAgeMonths: 0,
+              currentSavings: 200000,
+              retirementAge: 50,
+              lifeExpectancy: 80,
+              livingExpensePerMonth: 10000,
+              roiRate: 4,
+              incomePerMonthAfterRetirement: 2000,
+              livingExpensePerMonthAfterRetirement: 10000,
+            }
+          );
         } catch (e) {
           console.error("Failed to parse saved data:", e);
         }
@@ -405,7 +452,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={inputs.currentSavings ? formatNumber(inputs.currentSavings) : ""}
+                  value={
+                    inputs.currentSavings
+                      ? formatNumber(inputs.currentSavings)
+                      : ""
+                  }
                   onChange={(e) =>
                     handleInputChange("currentSavings", e.target.value)
                   }
@@ -459,7 +510,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={inputs.livingExpensePerMonth ? formatNumber(inputs.livingExpensePerMonth) : ""}
+                  value={
+                    inputs.livingExpensePerMonth
+                      ? formatNumber(inputs.livingExpensePerMonth)
+                      : ""
+                  }
                   onChange={(e) =>
                     handleInputChange("livingExpensePerMonth", e.target.value)
                   }
@@ -496,7 +551,11 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={inputs.incomePerMonthAfterRetirement ? formatNumber(inputs.incomePerMonthAfterRetirement) : ""}
+                  value={
+                    inputs.incomePerMonthAfterRetirement
+                      ? formatNumber(inputs.incomePerMonthAfterRetirement)
+                      : ""
+                  }
                   onChange={(e) =>
                     handleInputChange(
                       "incomePerMonthAfterRetirement",
@@ -515,9 +574,13 @@ export default function Calculator() {
                 </label>
                 <input
                   type="text"
-                  value={inputs.livingExpensePerMonthAfterRetirement ? formatNumber(
+                  value={
                     inputs.livingExpensePerMonthAfterRetirement
-                  ) : ""}
+                      ? formatNumber(
+                          inputs.livingExpensePerMonthAfterRetirement
+                        )
+                      : ""
+                  }
                   onChange={(e) =>
                     handleInputChange(
                       "livingExpensePerMonthAfterRetirement",
