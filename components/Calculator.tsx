@@ -14,26 +14,19 @@ type Language = "zh" | "en";
 interface Translations {
   title: string;
   subtitle: string;
-  titleTooltip: string;
   learnMore: string;
   yourInfo: string;
   currency: string;
   currentAgeYears: string;
   currentAgeMonths: string;
   currentSavings: string;
-  currentSavingsTooltip: string;
   retirementAge: string;
-  retirementAgeTooltip: string;
   lifeExpectancy: string;
-  lifeExpectancyTooltip: string;
   livingExpensePerMonth: string;
   annualROI: string;
-  annualROITooltip: string;
   incomeAfterRetirement: string;
-  incomeAfterRetirementTooltip: string;
   livingExpenseAfterRetirement: string;
   totalEarningsNeeded: string;
-  totalEarningsNeededTooltip: string;
   yearlyEarningsNeeded: string;
   monthlyEarningsNeeded: string;
   includesLivingExpenses: string;
@@ -47,29 +40,21 @@ interface Translations {
 const translations: Record<Language, Translations> = {
   zh: {
     title: "生前花光计算器",
-    subtitle: "合理规划财富，避免过度积累，计算你真正需要赚多少钱",
-    titleTooltip:
-      "基于「Die With Zero」理念，计算到预期寿命时刚好花完所有钱所需的收入。最大化人生体验，而非死后遗产。",
+    subtitle:
+      "基于「Die With Zero」理念，计算到预期寿命时刚好花完所有钱所需的收入。最大化人生体验，避免过度积累财富。",
     learnMore: "了解更多关于 Die With Zero",
     yourInfo: "个人信息",
     currency: "货币",
     currentAgeYears: "当前年龄（岁）",
     currentAgeMonths: "月份（0-11）",
     currentSavings: "当前储蓄",
-    currentSavingsTooltip: "目前用于退休的储蓄总额",
     retirementAge: "退休年龄",
-    retirementAgeTooltip: "计划停止工作并开始使用储蓄的年龄",
     lifeExpectancy: "预期寿命",
-    lifeExpectancyTooltip:
-      "预计能活到的年龄。计算器将确保在此年龄前刚好花完所有钱。",
     livingExpensePerMonth: "每月生活费",
-    annualROI: "年化收益率（%）",
-    annualROITooltip: "储蓄的预期年化投资回报率（考虑复利效应）",
-    incomeAfterRetirement: "退休后每月收入",
-    incomeAfterRetirementTooltip: "退休后的被动收入（如养老金、社保、房租等）",
+    annualROI: "年化收益率（%）- 储蓄投资回报率",
+    incomeAfterRetirement: "退休后每月收入（养老金、兼职等）",
     livingExpenseAfterRetirement: "退休后每月生活费",
     totalEarningsNeeded: "所需总收入",
-    totalEarningsNeededTooltip: "从现在到退休，需要赚取的总金额",
     yearlyEarningsNeeded: "所需年收入",
     monthlyEarningsNeeded: "所需月收入",
     includesLivingExpenses: "包含生活费 +",
@@ -82,34 +67,21 @@ const translations: Record<Language, Translations> = {
   en: {
     title: "Die With Zero Calculator",
     subtitle:
-      "Don't waste your life overearning money you don't actually need.",
-    titleTooltip:
-      "Calculate the exact amount you need to earn to spend all your money by your life expectancy. Based on the philosophy that the goal is to maximize life experiences, not die with the most money.",
+      "Calculate exactly how much you need to earn to spend all your money by your life expectancy. Based on the philosophy of maximizing life experiences, not wealth accumulation.",
     learnMore: "Learn more about Die With Zero",
     yourInfo: "Your Information",
     currency: "Currency",
     currentAgeYears: "Current Age (Years)",
     currentAgeMonths: "Months (0-11)",
     currentSavings: "Current Savings",
-    currentSavingsTooltip:
-      "Total amount of money you currently have saved for retirement.",
     retirementAge: "Retirement Age",
-    retirementAgeTooltip:
-      "Age at which you plan to stop working and start living off your savings.",
     lifeExpectancy: "Life Expectancy",
-    lifeExpectancyTooltip:
-      "The age you expect to live until. The calculator ensures you spend all your money by this age.",
     livingExpensePerMonth: "Living Expense Per Month",
-    annualROI: "Annual ROI Rate (%)",
-    annualROITooltip:
-      "Expected annual return on investment for your savings. This accounts for compound interest over time.",
-    incomeAfterRetirement: "Income Per Month After Retirement",
-    incomeAfterRetirementTooltip:
-      "Passive income you'll receive during retirement (e.g., pension, social security, rental income).",
+    annualROI: "Annual ROI Rate (%) - Investment Return",
+    incomeAfterRetirement:
+      "Income Per Month After Retirement (Pension, Part-time, etc.)",
     livingExpenseAfterRetirement: "Living Expense Per Month After Retirement",
     totalEarningsNeeded: "Total Earnings Needed",
-    totalEarningsNeededTooltip:
-      "Total amount you need to earn from now until retirement to achieve your Die With Zero goal.",
     yearlyEarningsNeeded: "Yearly Earnings Needed",
     monthlyEarningsNeeded: "Monthly Earnings Needed",
     includesLivingExpenses: "Includes living expenses +",
@@ -120,85 +92,6 @@ const translations: Record<Language, Translations> = {
     projectedWealth: "Projected Wealth",
   },
 };
-
-// Tooltip component
-function Tooltip({
-  text,
-  children,
-  position = "top",
-}: {
-  text: string;
-  children: React.ReactNode;
-  position?: "top" | "bottom";
-}) {
-  const [show, setShow] = useState(false);
-  const [isPersistent, setIsPersistent] = useState(false);
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Toggle persistent mode on click
-    if (isPersistent) {
-      setIsPersistent(false);
-      setShow(false);
-    } else {
-      setIsPersistent(true);
-      setShow(true);
-    }
-  };
-
-  const handleMouseEnter = () => {
-    // Only show on hover if not in persistent mode
-    if (!isPersistent) {
-      setShow(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    // Only hide on mouse leave if not in persistent mode
-    if (!isPersistent) {
-      setShow(false);
-    }
-  };
-
-  const handleClose = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsPersistent(false);
-    setShow(false);
-  };
-
-  return (
-    <div className="relative inline-block">
-      <span
-        onClick={handleClick}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className="cursor-help text-slate-400 hover:text-slate-200 ml-1 touch-manipulation select-none"
-      >
-        {children}
-      </span>
-      {show && (
-        <>
-          {/* Backdrop only shows in persistent mode (after click/touch) */}
-          {isPersistent && (
-            <div className="fixed inset-0 z-10" onClick={handleClose} />
-          )}
-          <div
-            className={`absolute z-20 left-1/2 transform -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] px-3 py-2 text-sm text-white bg-slate-900 rounded-lg shadow-lg border border-slate-700 ${
-              position === "top" ? "bottom-full mb-2" : "top-full mt-2"
-            }`}
-          >
-            {text}
-            {position === "top" ? (
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></div>
-            ) : (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -mb-1 border-4 border-transparent border-b-slate-900"></div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 const STORAGE_KEY = "die-with-zero-calculator";
 
@@ -362,11 +255,8 @@ export default function Calculator() {
             </div>
           </div>
 
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2 flex items-center justify-center gap-1 sm:gap-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">
             {t.title}
-            <Tooltip text={t.titleTooltip} position="bottom">
-              <span className="text-base sm:text-lg">ⓘ</span>
-            </Tooltip>
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-3xl mx-auto px-2 mb-2">
             {t.subtitle}
@@ -444,11 +334,8 @@ export default function Calculator() {
 
               {/* Current Savings */}
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1 flex items-center">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1">
                   {t.currentSavings}
-                  <Tooltip text={t.currentSavingsTooltip}>
-                    <span className="text-xs">ⓘ</span>
-                  </Tooltip>
                 </label>
                 <input
                   type="text"
@@ -467,11 +354,8 @@ export default function Calculator() {
 
               {/* Retirement Age */}
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1 flex items-center">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1">
                   {t.retirementAge}
-                  <Tooltip text={t.retirementAgeTooltip}>
-                    <span className="text-xs">ⓘ</span>
-                  </Tooltip>
                 </label>
                 <input
                   type="number"
@@ -486,11 +370,8 @@ export default function Calculator() {
 
               {/* Life Expectancy */}
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1 flex items-center">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1">
                   {t.lifeExpectancy}
-                  <Tooltip text={t.lifeExpectancyTooltip}>
-                    <span className="text-xs">ⓘ</span>
-                  </Tooltip>
                 </label>
                 <input
                   type="number"
@@ -525,11 +406,8 @@ export default function Calculator() {
 
               {/* ROI Rate */}
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1 flex items-center">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1">
                   {t.annualROI}
-                  <Tooltip text={t.annualROITooltip}>
-                    <span className="text-xs">ⓘ</span>
-                  </Tooltip>
                 </label>
                 <input
                   type="number"
@@ -543,11 +421,8 @@ export default function Calculator() {
 
               {/* Income After Retirement */}
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1 flex items-center">
+                <label className="block text-xs sm:text-sm font-medium text-slate-200 mb-1">
                   {t.incomeAfterRetirement}
-                  <Tooltip text={t.incomeAfterRetirementTooltip}>
-                    <span className="text-xs">ⓘ</span>
-                  </Tooltip>
                 </label>
                 <input
                   type="text"
@@ -609,11 +484,8 @@ export default function Calculator() {
                   ) : (
                     <>
                       <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-2xl p-2.5 sm:p-3 border border-white/20">
-                        <h3 className="text-xs font-medium text-slate-300 mb-1 flex items-center">
+                        <h3 className="text-xs font-medium text-slate-300 mb-1">
                           {t.totalEarningsNeeded}
-                          <Tooltip text={t.totalEarningsNeededTooltip}>
-                            <span className="text-xs">ⓘ</span>
-                          </Tooltip>
                         </h3>
                         <p className="text-xl sm:text-2xl font-bold text-white">
                           {formatCurrency(results.totalEarningsNeeded)}
