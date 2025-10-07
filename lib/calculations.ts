@@ -27,125 +27,95 @@ export interface CalculationResults {
 /** small epsilon for floating comparisons */
 const EPS = 1e-12;
 
-/** Calculate the exact current age in decimal years */
 function getExactAge(years: number, months: number): number {
   return years + months / 12;
 }
 
-/** Calculate future value with compound interest */
 function futureValue(presentValue: number, rate: number, periods: number): number {
   return presentValue * Math.pow(1 + rate, periods);
 }
 
-/** Calculate present value */
-function presentValue(futureValue: number, rate: number, periods: number): number {
-  return futureValue / Math.pow(1 + rate, periods);
-}
-
-/** Present value of an annuity-immediate (payments at end of each period) */
 function presentValueAnnuity(payment: number, rate: number, periods: number): number {
   if (periods <= 0) return 0;
   if (Math.abs(rate) < EPS) return payment * periods;
   return (payment * (1 - Math.pow(1 + rate, -periods))) / rate;
 }
 
-/** Future value of an annuity-immediate (payments at end of each period) */
-function futureValueAnnuity(payment: number, rate: number, periods: number): number {
-  if (periods <= 0) return 0;
-  if (Math.abs(rate) < EPS) return payment * periods;
-  return (payment * (Math.pow(1 + rate, periods) - 1)) / rate;
-}
-
-/**
- * Main calculation function (corrected)
- */
 export function calculateDieWithZero(inputs: CalculatorInputs): CalculationResults {
   const {
-    currentAge,
-    currentAgeMonths,
-    currentSavings,
-    retirementAge,
-    lifeExpectancy,
-    livingExpensePerMonth,
-    roiRate,
-    incomePerMonthAfterRetirement,
-    livingExpensePerMonthAfterRetirement,
+    currentAge, currentAgeMonths, currentSavings, retirementAge, lifeExpectancy,
+    livingExpensePerMonth, roiRate, incomePerMonthAfterRetirement,
+    livingExpensePerMonthAfterRetirement
   } = inputs;
 
-  // exact age in years (decimal)
   const exactCurrentAge = getExactAge(currentAge, currentAgeMonths);
-
-  // convert annual roi percent into decimal
   const annualRate = roiRate / 100;
-
-  // use *effective* monthly rate consistent with compounding:
+  // use effective monthly rate
   const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
 
-  // months until retirement and months in retirement
   const monthsUntilRetirement = Math.max(0, Math.round((retirementAge - exactCurrentAge) * 12));
   const monthsInRetirement = Math.max(0, Math.round((lifeExpectancy - retirementAge) * 12));
 
-  // net monthly withdrawal during retirement (what must be funded each month)
   const netMonthlyRetirement = livingExpensePerMonthAfterRetirement - incomePerMonthAfterRetirement;
 
-  // required wealth at retirement (PV at retirement of the retirement withdrawals)
+  // required wealth at retirement (PV at retirement of retirement withdrawals)
   const wealthNeededAtRetirement = presentValueAnnuity(netMonthlyRetirement, monthlyRate, monthsInRetirement);
 
   // future value of current savings at retirement
   const futureValueOfSavings = futureValue(currentSavings, monthlyRate, monthsUntilRetirement);
 
-  // additional wealth needed from earnings/savings before retirement
-  const additionalWealthNeeded = Math.max(0, wealthNeededAtRetirement - futureValueOfSavings);
+  // DO NOT clamp this to 0 — it can be negative (surplus)
+  const additionalWealthNeeded = wealthNeededAtRetirement - futureValueOfSavings;
 
-  // special-cases:
-  if (additionalWealthNeeded <= 0) {
-    // already sufficient
-    const wealthChart = generateWealthChart(inputs, 0, exactCurrentAge);
-    return {
-      totalEarningsNeeded: 0,
-      yearlyEarningsNeeded: 0,
-      monthlyEarningsNeeded: 0,
-      wealthChart,
-      isAchievable: true,
-      message: "You already have enough savings to fund retirement and die with (approximately) zero.",
-    };
-  }
-
-  // if no months to save (already at/after retirement), user needs a lump sum now
+  // Edge-case: no months to save: immediate lump sum needed (or immediate surplus)
   if (monthsUntilRetirement === 0) {
-    const wealthChart = generateWealthChart(inputs, 0, exactCurrentAge); // show path without extra saving
-    return {
-      totalEarningsNeeded: additionalWealthNeeded,
-      yearlyEarningsNeeded: additionalWealthNeeded, // one-time lump shown as yearly for convenience
-      monthlyEarningsNeeded: Number.POSITIVE_INFINITY,
-      wealthChart,
-      isAchievable: false,
-      message:
-        `You are at (or past) retirement: you need an immediate lump sum of ${additionalWealthNeeded.toFixed(
-          2
-        )} to fund the plan. Monthly-savings plan is not possible because there are 0 months until retirement.`,
-    };
+    if (Math.abs(additionalWealthNeeded) < EPS) {
+      // exactly matched
+      const chart = generateWealthChart(inputs, 0, exactCurrentAge);
+      return {
+        totalEarningsNeeded: 0,
+        yearlyEarningsNeeded: 0,
+        monthlyEarningsNeeded: 0,
+        wealthChart: chart,
+        isAchievable: true,
+        message: "You are at retirement now and your current savings exactly match the plan."
+      };
+    } else {
+      // Need an immediate lump-sum (positive -> need money; negative -> have surplus to spend now)
+      const chart = generateWealthChart(inputs, 0, exactCurrentAge);
+      return {
+        totalEarningsNeeded: additionalWealthNeeded > 0 ? additionalWealthNeeded : 0,
+        yearlyEarningsNeeded: additionalWealthNeeded > 0 ? additionalWealthNeeded : 0,
+        monthlyEarningsNeeded: additionalWealthNeeded > 0 ? Number.POSITIVE_INFINITY : 0,
+        wealthChart: chart,
+        isAchievable: false,
+        message: additionalWealthNeeded > 0
+          ? `You need an immediate lump sum of ${additionalWealthNeeded.toFixed(2)} to fund the plan.`
+          : `You currently have a surplus of ${(-additionalWealthNeeded).toFixed(2)} available to spend/gift immediately.`
+      };
+    }
   }
 
-  // compute monthly savings needed to reach 'additionalWealthNeeded' by retirement:
+  // Solve for monthly savings needed (I_b - E_b). This can be negative (dissaving).
   let monthlySavingsNeeded: number;
   if (Math.abs(monthlyRate) < EPS) {
+    // zero interest case
     monthlySavingsNeeded = additionalWealthNeeded / monthsUntilRetirement;
   } else {
     const denom = Math.pow(1 + monthlyRate, monthsUntilRetirement) - 1;
     monthlySavingsNeeded = (additionalWealthNeeded * monthlyRate) / denom;
   }
 
-  // monthly gross income needed = living expense + monthly savings (savings is net of expense)
+  // monthly gross earnings required = living expense + monthlySavingsNeeded (savings can be negative)
   const monthlyEarningsNeeded = livingExpensePerMonth + monthlySavingsNeeded;
   const yearlyEarningsNeeded = monthlyEarningsNeeded * 12;
   const totalEarningsNeeded = monthlyEarningsNeeded * monthsUntilRetirement;
 
-  // create wealth chart by simulating month-by-month (then sample yearly)
+  // build chart (month-by-month simulation inside function)
   const wealthChart = generateWealthChart(inputs, monthlySavingsNeeded, exactCurrentAge);
 
-  // sanity / achievability check: if monthlyEarningsNeeded is NaN or Infinity -> not achievable
-  const isFiniteIncome = Number.isFinite(monthlyEarningsNeeded) && monthlyEarningsNeeded > 0 && monthlyEarningsNeeded < 1e12;
+  const isFiniteIncome =
+    Number.isFinite(monthlyEarningsNeeded) && monthlyEarningsNeeded > -1e9 && monthlyEarningsNeeded < 1e12;
 
   return {
     totalEarningsNeeded,
@@ -153,7 +123,7 @@ export function calculateDieWithZero(inputs: CalculatorInputs): CalculationResul
     monthlyEarningsNeeded,
     wealthChart,
     isAchievable: isFiniteIncome,
-    message: isFiniteIncome ? undefined : "Required monthly income is unrealistic.",
+    message: isFiniteIncome ? undefined : "Required monthly income is not finite/realistic."
   };
 }
 
