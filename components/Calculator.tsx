@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   calculateDieWithZero,
   CalculatorInputs,
@@ -15,6 +15,7 @@ interface Translations {
   title: string;
   subtitle: string;
   titleTooltip: string;
+  learnMore: string;
   yourInfo: string;
   currency: string;
   currentAgeYears: string;
@@ -31,7 +32,6 @@ interface Translations {
   incomeAfterRetirement: string;
   incomeAfterRetirementTooltip: string;
   livingExpenseAfterRetirement: string;
-  calculate: string;
   totalEarningsNeeded: string;
   totalEarningsNeededTooltip: string;
   yearlyEarningsNeeded: string;
@@ -39,7 +39,6 @@ interface Translations {
   includesLivingExpenses: string;
   savings: string;
   wealthProjection: string;
-  enterInfoPrompt: string;
   working: string;
   retirement: string;
   projectedWealth: string;
@@ -50,6 +49,7 @@ const translations: Record<Language, Translations> = {
     title: "生前花光计算器",
     subtitle: "合理规划财富，避免过度积累，计算你真正需要赚多少钱",
     titleTooltip: "基于「Die With Zero」理念，计算到预期寿命时刚好花完所有钱所需的收入。最大化人生体验，而非死后遗产。",
+    learnMore: "了解更多关于 Die With Zero",
     yourInfo: "个人信息",
     currency: "货币",
     currentAgeYears: "当前年龄（岁）",
@@ -66,7 +66,6 @@ const translations: Record<Language, Translations> = {
     incomeAfterRetirement: "退休后每月收入",
     incomeAfterRetirementTooltip: "退休后的被动收入（如养老金、社保、房租等）",
     livingExpenseAfterRetirement: "退休后每月生活费",
-    calculate: "开始计算",
     totalEarningsNeeded: "所需总收入",
     totalEarningsNeededTooltip: "从现在到退休，需要赚取的总金额",
     yearlyEarningsNeeded: "所需年收入",
@@ -74,7 +73,6 @@ const translations: Record<Language, Translations> = {
     includesLivingExpenses: "包含生活费 +",
     savings: "储蓄",
     wealthProjection: "财富走势图",
-    enterInfoPrompt: "填写信息并点击计算，查看个性化方案",
     working: "工作期",
     retirement: "退休期",
     projectedWealth: "财富预测",
@@ -83,6 +81,7 @@ const translations: Record<Language, Translations> = {
     title: "Die With Zero Calculator",
     subtitle: "Don't waste your life overearning money you don't actually need.",
     titleTooltip: "Calculate the exact amount you need to earn to spend all your money by your life expectancy. Based on the philosophy that the goal is to maximize life experiences, not die with the most money.",
+    learnMore: "Learn more about Die With Zero",
     yourInfo: "Your Information",
     currency: "Currency",
     currentAgeYears: "Current Age (Years)",
@@ -99,7 +98,6 @@ const translations: Record<Language, Translations> = {
     incomeAfterRetirement: "Income Per Month After Retirement",
     incomeAfterRetirementTooltip: "Passive income you'll receive during retirement (e.g., pension, social security, rental income).",
     livingExpenseAfterRetirement: "Living Expense Per Month After Retirement",
-    calculate: "Calculate",
     totalEarningsNeeded: "Total Earnings Needed",
     totalEarningsNeededTooltip: "Total amount you need to earn from now until retirement to achieve your Die With Zero goal.",
     yearlyEarningsNeeded: "Yearly Earnings Needed",
@@ -107,7 +105,6 @@ const translations: Record<Language, Translations> = {
     includesLivingExpenses: "Includes living expenses +",
     savings: "savings",
     wealthProjection: "Wealth Projection Over Time",
-    enterInfoPrompt: "Enter your information and click Calculate to see your personalized plan",
     working: "Working",
     retirement: "Retirement",
     projectedWealth: "Projected Wealth",
@@ -125,6 +122,7 @@ function Tooltip({
   position?: "top" | "bottom";
 }) {
   const [show, setShow] = useState(false);
+
   return (
     <div className="relative inline-block">
       <span
@@ -157,24 +155,96 @@ function Tooltip({
   );
 }
 
+const STORAGE_KEY = "die-with-zero-calculator";
+
 export default function Calculator() {
-  const [inputs, setInputs] = useState<CalculatorInputs>({
-    currentAge: 30,
-    currentAgeMonths: 0,
-    currentSavings: 200000,
-    retirementAge: 50,
-    lifeExpectancy: 80,
-    livingExpensePerMonth: 10000,
-    roiRate: 4,
-    incomePerMonthAfterRetirement: 2000,
-    livingExpensePerMonthAfterRetirement: 10000,
+  // Load saved data from localStorage or use defaults
+  const [inputs, setInputs] = useState<CalculatorInputs>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          return data.inputs || {
+            currentAge: 30,
+            currentAgeMonths: 0,
+            currentSavings: 200000,
+            retirementAge: 50,
+            lifeExpectancy: 80,
+            livingExpensePerMonth: 10000,
+            roiRate: 4,
+            incomePerMonthAfterRetirement: 2000,
+            livingExpensePerMonthAfterRetirement: 10000,
+          };
+        } catch (e) {
+          console.error("Failed to parse saved data:", e);
+        }
+      }
+    }
+    return {
+      currentAge: 30,
+      currentAgeMonths: 0,
+      currentSavings: 200000,
+      retirementAge: 50,
+      lifeExpectancy: 80,
+      livingExpensePerMonth: 10000,
+      roiRate: 4,
+      incomePerMonthAfterRetirement: 2000,
+      livingExpensePerMonthAfterRetirement: 10000,
+    };
   });
 
   const [results, setResults] = useState<CalculationResults | null>(null);
-  const [currency, setCurrency] = useState<string>("CNY");
-  const [language, setLanguage] = useState<Language>("zh");
+
+  const [currency, setCurrency] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          return data.currency || "CNY";
+        } catch (e) {
+          console.error("Failed to parse saved data:", e);
+        }
+      }
+    }
+    return "CNY";
+  });
+
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          return data.language || "zh";
+        } catch (e) {
+          console.error("Failed to parse saved data:", e);
+        }
+      }
+    }
+    return "zh";
+  });
 
   const t = translations[language];
+
+  // Save to localStorage whenever inputs, currency, or language change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            inputs,
+            currency,
+            language,
+          })
+        );
+      } catch (e) {
+        console.error("Failed to save to localStorage:", e);
+      }
+    }
+  }, [inputs, currency, language]);
 
   const handleInputChange = (field: keyof CalculatorInputs, value: string) => {
     // Remove commas before parsing
@@ -190,10 +260,11 @@ export default function Calculator() {
     return num.toLocaleString("en-US");
   };
 
-  const handleCalculate = () => {
+  // Auto-calculate results whenever inputs change
+  useEffect(() => {
     const calculationResults = calculateDieWithZero(inputs);
     setResults(calculationResults);
-  };
+  }, [inputs]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -244,9 +315,17 @@ export default function Calculator() {
               <span className="text-base sm:text-lg">ⓘ</span>
             </Tooltip>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-3xl mx-auto px-2">
+          <p className="text-xs sm:text-sm text-slate-300 max-w-3xl mx-auto px-2 mb-2">
             {t.subtitle}
           </p>
+          <a
+            href="https://www.diewithzerobook.com/welcome"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs sm:text-sm text-blue-400 hover:text-blue-300 underline transition-colors"
+          >
+            {t.learnMore} →
+          </a>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
@@ -434,14 +513,6 @@ export default function Calculator() {
                   className="w-full px-2 sm:px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-              {/* Calculate Button */}
-              <button
-                onClick={handleCalculate}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2.5 sm:py-2.5 px-4 rounded-lg transition-all duration-200 transform active:scale-95 sm:hover:scale-105 shadow-lg text-sm sm:text-base"
-              >
-                {t.calculate}
-              </button>
             </div>
           </div>
 
@@ -514,14 +585,6 @@ export default function Calculator() {
                   />
                 </div>
               </>
-            )}
-
-            {!results && (
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-2xl p-6 sm:p-8 border border-white/20 flex items-center justify-center">
-                <p className="text-sm text-slate-300 text-center">
-                  {t.enterInfoPrompt}
-                </p>
-              </div>
             )}
           </div>
         </div>
