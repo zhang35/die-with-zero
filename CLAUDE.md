@@ -8,18 +8,20 @@ A Next.js 15 web application that calculates retirement planning using the "Die 
 
 ## Development Commands
 
+**Package Manager**: This project uses **pnpm** (not npm or yarn).
+
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Run development server with Turbopack
-npm run dev
+pnpm run dev
 
 # Build for production with Turbopack
-npm run build
+pnpm run build
 
 # Start production server
-npm start
+pnpm start
 ```
 
 ## Architecture

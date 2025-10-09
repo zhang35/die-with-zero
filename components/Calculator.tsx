@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   calculateDieWithZero,
   CalculatorInputs,
   CalculationResults,
 } from "@/lib/calculations";
 import WealthChart from "./WealthChart";
+import domtoimage from "dom-to-image-more";
+import { QRCodeSVG } from "qrcode.react";
 
 // Translation type
 type Language = "zh" | "en";
@@ -35,6 +37,9 @@ interface Translations {
   working: string;
   retirement: string;
   projectedWealth: string;
+  shareAsImage: string;
+  sharingImage: string;
+  scanToTry: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -63,6 +68,9 @@ const translations: Record<Language, Translations> = {
     working: "工作期",
     retirement: "退休期",
     projectedWealth: "财富预测",
+    shareAsImage: "分享为图片",
+    sharingImage: "生成图片中...",
+    scanToTry: "扫码试试",
   },
   en: {
     title: "Die With Zero Calculator",
@@ -90,12 +98,18 @@ const translations: Record<Language, Translations> = {
     working: "Working",
     retirement: "Retirement",
     projectedWealth: "Projected Wealth",
+    shareAsImage: "Share as Image",
+    sharingImage: "Generating image...",
+    scanToTry: "Scan to try",
   },
 };
 
 const STORAGE_KEY = "die-with-zero-calculator";
 
 export default function Calculator() {
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
   // Load saved data from localStorage or use defaults
   const [inputs, setInputs] = useState<CalculatorInputs>(() => {
     if (typeof window !== "undefined") {
@@ -221,40 +235,125 @@ export default function Calculator() {
     }).format(amount);
   };
 
+  const handleShareAsImage = async () => {
+    if (!resultsRef.current) return;
+
+    setIsGeneratingImage(true);
+
+    try {
+      // Create a style element to fix rendering issues
+      const styleEl = document.createElement('style');
+      styleEl.textContent = `
+        * {
+          border: none !important;
+          border-color: transparent !important;
+          outline: none !important;
+          outline-color: transparent !important;
+          box-shadow: none !important;
+          overflow: visible !important;
+        }
+        *::-webkit-scrollbar {
+          display: none !important;
+        }
+        * {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+        a {
+          border: none !important;
+          outline: none !important;
+          text-decoration: underline !important;
+        }
+        .flex.items-center.gap-2 span,
+        .flex.items-center.gap-4 span,
+        .flex.items-center.gap-6 span {
+          white-space: nowrap !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+
+      const blob = await domtoimage.toBlob(resultsRef.current, {
+        bgcolor: "#0f172a",
+        quality: 1,
+        scale: 2,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+        },
+      });
+
+      // Clean up style element
+      document.head.removeChild(styleEl);
+
+      const fileName = `die-with-zero-plan-${new Date().getTime()}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      // Try Web Share API first (better for mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: t.title,
+            text: t.subtitle,
+          });
+          setIsGeneratingImage(false);
+          return;
+        } catch (shareError) {
+          // User cancelled or share failed, fall through to download
+          console.log("Share cancelled or failed:", shareError);
+        }
+      }
+
+      // Fallback: Download the image
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      setIsGeneratingImage(false);
+    } catch (error) {
+      console.error("Error generating image:", error);
+      setIsGeneratingImage(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-2 sm:py-4 px-3 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-3 sm:mb-4">
-          {/* Language Switch */}
-          <div className="flex justify-center sm:justify-end mb-2 sm:mb-0 sm:absolute sm:right-0 sm:top-0">
-            <div className="relative inline-flex items-center bg-white/10 rounded-full p-1 border border-white/20">
-              {/* Sliding background */}
-              <div
-                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-500/80 rounded-full transition-all duration-300 ease-in-out ${
-                  language === "zh" ? "left-1" : "left-[calc(50%+0.125rem)]"
-                }`}
-              />
-              {/* Chinese option */}
-              <button
-                onClick={() => setLanguage("zh")}
-                className={`relative z-10 px-3 py-1 text-xs sm:text-sm font-medium rounded-full transition-colors duration-200 ${
-                  language === "zh" ? "text-white" : "text-slate-400"
-                }`}
-              >
-                中文
-              </button>
-              {/* English option */}
-              <button
-                onClick={() => setLanguage("en")}
-                className={`relative z-10 px-3 py-1 text-xs sm:text-sm font-medium rounded-full transition-colors duration-200 ${
-                  language === "en" ? "text-white" : "text-slate-400"
-                }`}
-              >
-                EN
-              </button>
-            </div>
+        {/* Language Switch */}
+        <div className="flex justify-center sm:justify-end mb-3 sm:mb-4">
+          <div className="relative inline-flex items-center bg-white/10 rounded-full p-1 border border-white/20">
+            {/* Sliding background */}
+            <div
+              className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-500/80 rounded-full transition-all duration-300 ease-in-out ${
+                language === "zh" ? "left-1" : "left-[calc(50%+0.125rem)]"
+              }`}
+            />
+            {/* Chinese option */}
+            <button
+              onClick={() => setLanguage("zh")}
+              className={`relative z-10 px-3 py-1 text-xs sm:text-sm font-medium rounded-full transition-colors duration-200 ${
+                language === "zh" ? "text-white" : "text-slate-400"
+              }`}
+            >
+              中文
+            </button>
+            {/* English option */}
+            <button
+              onClick={() => setLanguage("en")}
+              className={`relative z-10 px-3 py-1 text-xs sm:text-sm font-medium rounded-full transition-colors duration-200 ${
+                language === "en" ? "text-white" : "text-slate-400"
+              }`}
+            >
+              EN
+            </button>
           </div>
+        </div>
 
+        <div ref={resultsRef}>
+        <div className="text-center mb-3 sm:mb-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">
             {t.title}
           </h1>
@@ -538,6 +637,40 @@ export default function Calculator() {
             )}
           </div>
         </div>
+
+        {/* QR Code Footer - Only shown when results exist */}
+        {results && (
+          <div className="mt-4 flex items-center justify-center gap-3 bg-white/5 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+            <QRCodeSVG
+              value="https://zero.dailybetter.cn/"
+              size={80}
+              level="M"
+              bgColor="transparent"
+              fgColor="#ffffff"
+            />
+            <div className="text-slate-300 text-xs sm:text-sm">
+              <div className="font-semibold">{t.scanToTry}</div>
+              <div className="text-slate-400 mt-0.5">zero.dailybetter.cn</div>
+            </div>
+          </div>
+        )}
+        </div>
+
+        {/* Share Button - Below the captured area */}
+        {results && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={handleShareAsImage}
+              disabled={isGeneratingImage}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:from-blue-400 disabled:to-purple-400 text-white font-semibold py-3 px-8 rounded-xl transition-all shadow-xl hover:shadow-2xl disabled:cursor-not-allowed text-sm sm:text-base flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a 3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span>{isGeneratingImage ? t.sharingImage : t.shareAsImage}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
