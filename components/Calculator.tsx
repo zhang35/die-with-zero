@@ -658,7 +658,7 @@ export default function Calculator() {
 
         {/* Share Button - Below the captured area */}
         {results && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 mb-6 sm:mb-8 flex justify-center">
             <button
               onClick={handleShareAsImage}
               disabled={isGeneratingImage}
