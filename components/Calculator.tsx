@@ -288,29 +288,32 @@ export default function Calculator() {
       const fileName = `die-with-zero-plan-${new Date().getTime()}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
 
-      // Try Web Share API first (better for mobile)
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: t.title,
-            text: t.subtitle,
-          });
-          setIsGeneratingImage(false);
-          return;
-        } catch (shareError) {
-          // User cancelled or share failed, fall through to download
-          console.log("Share cancelled or failed:", shareError);
-        }
-      }
+      // Detect if device is mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
 
-      // Fallback: Download the image
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = fileName;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
+      if (isMobile) {
+        // Mobile: Use Web Share API only
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: t.title,
+              text: t.subtitle,
+            });
+          } catch (shareError) {
+            console.log("Share cancelled or failed:", shareError);
+          }
+        }
+      } else {
+        // Desktop: Download only
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = fileName;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
 
       setIsGeneratingImage(false);
     } catch (error) {
