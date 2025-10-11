@@ -50,8 +50,8 @@ export function calculateDieWithZero(inputs: CalculatorInputs): CalculationResul
 
   const exactCurrentAge = getExactAge(currentAge, currentAgeMonths);
   const annualRate = roiRate / 100;
-  // use effective monthly rate
-  const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
+  // use simple proportional rate: 6 months = 6/12 annual ROI
+  const monthlyRate = annualRate / 12;
 
   const monthsUntilRetirement = Math.max(0, Math.round((retirementAge - exactCurrentAge) * 12));
   const monthsInRetirement = Math.max(0, Math.round((lifeExpectancy - retirementAge) * 12));
@@ -146,7 +146,7 @@ function generateWealthChart(
   } = inputs;
 
   const annualRate = roiRate / 100;
-  const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
+  const monthlyRate = annualRate / 12; // Simple proportional: 6 months = 6/12 annual ROI
 
   const netMonthlyRetirement = livingExpensePerMonthAfterRetirement - incomePerMonthAfterRetirement;
 

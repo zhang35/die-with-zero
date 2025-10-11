@@ -30,7 +30,7 @@ pnpm start
 
 The heart of the application. All financial calculations use:
 
-- **Effective monthly rate**: Converted from annual ROI using `(1 + annualRate)^(1/12) - 1` for accurate compounding
+- **Simple proportional monthly rate**: Converted from annual ROI using `annualRate / 12` (e.g., 6 months = 6/12 of annual ROI)
 - **Present/Future value formulas**: Standard time value of money calculations
 - **Annuity formulas**: For retirement cash flow streams
 
